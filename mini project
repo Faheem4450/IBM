@@ -1,0 +1,181 @@
+library(pandas)
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(cowplot)
+library(reshape2)
+library(gplots)
+library(ROCR)
+library(ada)
+library(caret)
+
+data <- read.csv("Toddler Autism dataset July 2018.csv")
+
+data <- data[, -1]
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = Sex), fill = "steelblue") +
+  labs(title = "Sex") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+labels <- c("Yes", "No")
+myexplode <- c(0.1, 0)
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Class.ASD.Traits), fill = factor(Class.ASD.Traits))) +
+  coord_polar(theta = "y") +
+  labs(title = "ASD") +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = c("Yes" = "steelblue", "No" = "lightgray")) +
+  theme(legend.position = "right")
+
+fig
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Class.ASD.Traits), fill = factor(Class.ASD.Traits)), position = "fill") +
+  facet_wrap(~Ethnicity, nrow = 2) +
+  labs(title = "ASD by Ethnicity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+labels <- c('middle eastern', 'White European', 'Hispanic', 'black', 'asian',
+            'south asian', 'Native Indian', 'Others', 'Latino', 'mixed', 'Pacifica')
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Ethnicity), fill = factor(Ethnicity))) +
+  coord_polar(theta = "y") +
+  labs(title = "Ethnicity") +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = c('middle eastern' = 'steelblue', 'White European' = 'lightgray',
+                               'Hispanic' = 'lightgray', 'black' = 'lightgray', 'asian' = 'lightgray',
+                               'south asian' = 'lightgray', 'Native Indian' = 'lightgray', 'Others' = 'lightgray',
+                               'Latino' = 'lightgray', 'mixed' = 'lightgray', 'Pacifica' = 'lightgray')) +
+  theme(legend.position = "right")
+
+fig
+
+asd_counts_ethnicity <- table(data$Ethnicity[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts_ethnicity, main = "ASD Cases by Ethnicity", xlab = "Ethnicity", ylab = "Number of ASD Cases")
+text(fig, asd_counts_ethnicity, asd_counts_ethnicity, pos = 3)
+
+total_ethnicity_counts <- table(data$Ethnicity)
+asd_counts_ethnicity <- table(data$Ethnicity[data$Class.ASD.Traits == 'Yes'])
+asd_percentage_ethnicity <- (asd_counts_ethnicity / total_ethnicity_counts) * 100
+fig <- barplot(asd_percentage_ethnicity[labels], main = "Percentage of ASD Cases by Ethnicity", xlab = "Ethnicity", ylab = "Percentage of ASD Cases")
+text(fig, asd_percentage_ethnicity[labels], paste0(round(asd_percentage_ethnicity[labels], 1), "%"), pos = 3)
+
+asd_counts_sex <- table(data$Sex[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts_sex, main = "ASD Cases by Sex", xlab = "Sex", ylab = "Number of ASD Cases")
+text(fig, asd_counts_sex, asd_counts_sex, pos = 3)
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Sex), fill = factor(Sex)), position = "fill") +
+  facet_wrap(~Sex, nrow = 2) +
+  labs(title = "Sex") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+asd_counts_jaundice <- table(data$Jaundice[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts_jaundice, main = "ASD Cases by Jaundice", xlab = "Jaundice", ylab = "Number of ASD Cases")
+text(fig, asd_counts_jaundice, asd_counts_jaundice, pos = 3)
+
+asd_counts_jaundice <- table(data$Class.ASD.Traits[data$Jaundice == 'yes'])
+fig <- barplot(asd_counts_jaundice, main = "ASD Cases when a toddler already has Jaundice", xlab = "ASD", ylab = "Number of ASD and Jaundice Cases")
+text(fig, asd_counts_jaundice, asd_counts_jaundice, pos = 3)
+
+asd_counts <- table(data$Family_mem_with_ASD[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts, main = "ASD Cases by Family_mem_with_ASD", xlab = "Family_mem_with_ASD", ylab = "Number of ASD Cases")
+text(fig, asd_counts, asd_counts, pos = 3)
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Family_mem_with_ASD), fill = factor(Family_mem_with_ASD)), position = "fill") +
+  facet_wrap(~Family_mem_with_ASD, nrow = 2) +
+  labs(title = "Family_mem_with_ASD") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+asd_counts <- table(data$Class.ASD.Traits[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts, main = "ASD Cases by Who completed the test", xlab = "Who completed the test", ylab = "Number of ASD Cases")
+text(fig, asd_counts, asd_counts, pos = 3)
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Who.completed.the.test), fill = factor(Who.completed.the.test)), position = "fill") +
+  facet_wrap(~Who.completed.the.test, nrow = 2) +
+  labs(title = "Who completed the test") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+asd_counts <- table(data$Age.Mons[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts, main = "ASD Cases by Age_Mons", xlab = "Age_Mons", ylab = "Number of ASD Cases")
+text(fig, asd_counts, asd_counts, pos = 3)
+
+d <- data.frame(Age = as.integer(data$Age.Mons / 12), ASD = data$Class.ASD.Traits)
+asd_counts <- table(d$Age[d$ASD == 'Yes'])
+fig <- barplot(asd_counts, main = "ASD Cases by Age", xlab = "Age", ylab = "Number of ASD Cases")
+text(fig, asd_counts, asd_counts, pos = 3)
+
+asd_counts <- table(data$Qchat.10.Score[data$Class.ASD.Traits == 'Yes'])
+fig <- barplot(asd_counts, main = "ASD Cases by Qchat.10.Score", xlab = "Qchat.10.Score", ylab = "Number of ASD Cases")
+text(fig, asd_counts, asd_counts, pos = 3)
+
+fig <- ggplot(data) +
+  geom_bar(aes(x = factor(Qchat.10.Score), fill = factor(Qchat.10.Score)), position = "fill") +
+  facet_wrap(~Qchat.10.Score, nrow = 2) +
+  labs(title = "Qchat.10.Score") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+fig
+
+df <- data[data$Class.ASD.Traits == 'Yes', ]
+sums <- colSums(df[, c('A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10')])
+fig <- barplot(sums, main = "ASD Cases by Questions", xlab = "Questions", ylab = "Number of ASD Cases")
+text(fig, sums, sums, pos = 3)
+
+X <- data[, -ncol(data)]
+y <- data[, ncol(data)]
+X <- dummyVars(" ~ .", data = X) %>% predict(X)
+le <- LabelEncoder()
+y <- le$fit_transform(y)
+X$Sex <- le$fit_transform(X$Sex)
+X$Jaundice <- le$fit_transform(X$Jaundice)
+X$Family_mem_with_ASD <- le$fit_transform(X$Family_mem_with_ASD)
+
+set.seed(69)
+train_indices <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_indices, ]
+X_test <- X[-train_indices, ]
+y_train <- y[train_indices]
+y_test <- y[-train_indices]
+
+sc <- preProcess(X_train, method = c("center", "scale"))
+X_train_scaled <- predict(sc, X_train)
+X_test_scaled <- predict(sc, X_test)
+
+model <- ada(X_train_scaled, y_train)
+
+y_pred <- predict(model, X_test_scaled)
+
+accuracy <- sum(y_pred == y_test) / length(y_test)
+precision <- caret::precision(y_pred, y_test)
+recall <- caret::recall(y_pred, y_test)
+f1 <- caret::F1_Score(y_pred, y_test)
+
+metrics_table <- data.frame(
+  Metric = c('Accuracy', 'Precision', 'Recall', 'F1 Score'),
+  Value = c(accuracy, precision, recall, f1)
+)
+
+metrics_table
+
+pred <- prediction(y_probs, y_test)
+perf <- performance(pred, "tpr", "fpr")
+auc <- performance(pred, "auc")
+fig <- plot(perf, main = "Receiver Operating Characteristic - AdaBoost Classifier")
+abline(0, 1, lty = 2)
+legend("bottomright", legend = paste("AUC =", round(auc@y.values[[1]], 2)), bty = "n")
+
+fig
